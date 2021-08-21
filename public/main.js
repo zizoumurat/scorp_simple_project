@@ -18,8 +18,6 @@ const isEmptyArray = arr => {
 }
 
 const isGifType = type => {
-  if(type === API_EVENT_TYPE.ANIMATED_GIFT) {
-  }
   return type === API_EVENT_TYPE.ANIMATED_GIFT;
 }
 
