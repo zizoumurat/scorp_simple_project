@@ -16,20 +16,28 @@ const isEmptyArray = arr => {
   return arr.length === 0;
 }
 
-const isGifType = type => {
+const isAnimatedGifType = type => {
   return type === API_EVENT_TYPE.ANIMATED_GIFT;
+}
+
+const isMessageType = type => {
+  return type === API_EVENT_TYPE.MESSAGE;
+}
+
+const isGifType = type => {
+  return type === API_EVENT_TYPE.GIFT;
 }
 
 setInterval(function () {
   if (!isEmptyArray(queue)) {
     let event = queue[0];
 
-    if (isGifType(event.type) && !isAnimatingGiftUI()) {
+    if (isAnimatedGifType(event.type) && !isAnimatingGiftUI()) {
       animateGift(event);
       queue.shift();
     }
 
-    if (event.type === API_EVENT_TYPE.MESSAGE) {
+    if (isMessageType(event.type)) {
       if (!isOldMessage(event)) {
         addMessage(event);
       }
@@ -37,7 +45,7 @@ setInterval(function () {
       queue.shift();
     }
 
-    if (event.type === API_EVENT_TYPE.GIFT) {
+    if (isGifType(event.type)) {
       addMessage(event);
       queue.shift();
     }
