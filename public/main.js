@@ -4,9 +4,8 @@ import { APIWrapper, API_EVENT_TYPE } from "./api.js";
 import { addMessage, animateGift, isAnimatingGiftUI } from "./dom_updates.js";
 
 const api = new APIWrapper();
-
-var gifArray = new Array();
-var messageArray = new Array();
+var queue = new Array();
+const EVENT_DELAY = 500;
 
 
 const isOldMessage = event => {
@@ -22,24 +21,32 @@ const isGifType = type => {
 }
 
 setInterval(function () {
-  if (!isEmptyArray(gifArray) && !isAnimatingGiftUI()) {
-    let event = gifArray.shift();
-    addMessage(event);
-    animateGift(event);
-  }
+  if (!isEmptyArray(queue)) {
+    let event = queue[0];
 
-  if (!isEmptyArray(messageArray)) {
-    let event = messageArray.shift();
-    if (!isOldMessage(event)) {
+    if (isGifType(event.type) && !isAnimatingGiftUI()) {
+      animateGift(event);
+      queue.shift();
+    }
+
+    if (event.type === API_EVENT_TYPE.MESSAGE) {
+      if (!isOldMessage(event)) {
+        addMessage(event);
+      }
+
+      queue.shift();
+    }
+
+    if (event.type === API_EVENT_TYPE.GIFT) {
       addMessage(event);
+      queue.shift();
     }
   }
-}, 500);
+
+}, EVENT_DELAY);
 
 api.setEventHandler((events) => {
-  events.map(event => {
-    isGifType(event.type) ? gifArray.push(event) : messageArray.push(event);
-  });
+  queue.push(...[...events.filter(event => isGifType(event.type)), ...events.filter(event => !isGifType(event.type))])
 })
 
 // NOTE: UI helper methods from `dom_updates` are already imported above.
