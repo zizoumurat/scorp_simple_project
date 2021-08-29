@@ -6,10 +6,11 @@ import { addMessage, animateGift, isAnimatingGiftUI } from "./dom_updates.js";
 const api = new APIWrapper();
 var queue = new Array();
 const EVENT_DELAY = 500;
+const OLDER_THAN_MILLISECONDS = 20 * 1000;
 
 
-const isOldMessage = event => {
-  return (new Date().getTime() - event.timestamp.getTime()) / 1000 > 20;
+function removeEventsFromQueueOlderThan() {
+  queue = queue.filter(event => Date.now() - event.timestamp < OLDER_THAN_MILLISECONDS);
 }
 
 const isEmptyArray = arr => {
@@ -20,41 +21,42 @@ const isAnimatedGifType = type => {
   return type === API_EVENT_TYPE.ANIMATED_GIFT;
 }
 
-const isMessageType = type => {
-  return type === API_EVENT_TYPE.MESSAGE;
-}
-
-const isGifType = type => {
-  return type === API_EVENT_TYPE.GIFT;
-}
-
 setInterval(function () {
   if (!isEmptyArray(queue)) {
-    let event = queue[0];
+    removeEventsFromQueueOlderThan();
+    let eventIndex = 0;
 
-    if (isAnimatedGifType(event.type) && !isAnimatingGiftUI()) {
-      animateGift(event);
-      queue.shift();
-    }
+    let event = queue[eventIndex];
 
-    if (isMessageType(event.type)) {
-      if (!isOldMessage(event)) {
+    if (isAnimatedGifType(event.type)) {
+      if (!isAnimatingGiftUI()) {
         addMessage(event);
+        animateGift(event);
+        queue.splice(eventIndex,1);
+
+        return;
       }
 
-      queue.shift();
+      // 
+
+      eventIndex = queue.findIndex(event => !isAnimatedGifType(event.type));
+      
+      if (eventIndex === -1) {
+          return;
+      }
+
+      event = queue[eventIndex];
     }
 
-    if (isGifType(event.type)) {
-      addMessage(event);
-      queue.shift();
-    }
+    addMessage(event);
+    queue.splice(eventIndex,1);
   }
 
 }, EVENT_DELAY);
 
 api.setEventHandler((events) => {
-  queue.push(...[...events.filter(event => isGifType(event.type)), ...events.filter(event => !isGifType(event.type))])
+  // animatedGiftler kuyruğa öncelikli olarak eklenir, diğer türler geldikleri sıra ile kuyruğa eklenir.
+  queue.push(...[...events.filter(event => isAnimatedGifType(event.type)), ...events.filter(event => !isAnimatedGifType(event.type))])
 })
 
 // NOTE: UI helper methods from `dom_updates` are already imported above.
