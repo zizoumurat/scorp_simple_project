@@ -37,7 +37,7 @@ setInterval(function () {
         return;
       }
 
-      // 
+      // önceki animatedGift'in tamamlanmasını beklerken sıradaki animatedGift olmayan mesajı göstermeye devam eder.
 
       eventIndex = queue.findIndex(event => !isAnimatedGifType(event.type));
       
